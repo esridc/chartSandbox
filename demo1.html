@@ -54,7 +54,7 @@
   <!-- load cedar -->
   <script src="https://unpkg.com/@esri/cedar/dist/umd/cedar.js"></script>
 
-  <script src="https://js.arcgis.com/4.9/"></script>
+  <script src="https://js.arcgis.com/4.17/"></script>
 
   <script>
     require([
@@ -240,9 +240,10 @@
 
         // Listen to SketchViewModel's move events so that population pyramid chart
         // is updated as the graphics are updated
-        sketchViewModel.on("move-start", onMove);
-        sketchViewModel.on("move", onMove);
-        sketchViewModel.on("move-complete", onMove);
+        // sketchViewModel.on("move-start", onMove);
+        sketchViewModel.on("update", onMove);
+        // sketchViewModel.on("move", onMove);
+        // sketchViewModel.on("move-complete", onMove);
       }
 
       /*****************************************************************
@@ -271,25 +272,32 @@
        * updated geometry information and run the query stats again.
        *********************************************************************/
       function onMove(event) {
+        console.log(JSON.stringify(event))
+        if (!event.toolEventInfo) {
+          return
+        }
+        // debugger
         // User is moving the 'center' graphic.
         // Adjust other graphics based on the movement of the center graphic
         if (activeGraphic === centerGraphic) {
           // Update the reference graphic's geometry
-          centerGraphic.geometry = event.geometry;
+          // debugger
+          centerGraphic.geometry = event.graphics[0].geometry;
 
           // Calculate location of edgeGraphic
           // dx/dy values are in pixels
+            // debugger
           const edgeScreenPoint = view.toScreen(edgeGraphic.geometry);
-          const edgeX = edgeScreenPoint.x + event.dx;
-          const edgeY = edgeScreenPoint.y + event.dy;
+          const edgeX = edgeScreenPoint.x + event.toolEventInfo.dx;
+          const edgeY = edgeScreenPoint.y + event.toolEventInfo.dy;
 
-          edgeGraphic.geometry = view.toMap(edgeX, edgeY);
+          edgeGraphic.geometry = view.toMap({x: edgeX, y: edgeY});
         }
         // User is moving on the 'edge' graphic.
         // Resize the polyline graphic and recalculate the buffer polygon
         else if (activeGraphic === edgeGraphic) {
           // Update the reference graphic's geometry
-          edgeGraphic.geometry = event.geometry;
+          edgeGraphic.geometry = event.graphics[0].geometry;
         }
 
         const vertices = [
@@ -298,7 +306,7 @@
         ];
 
         // client-side stats query of features that intersect the buffer
-        calculateBuffer(vertices);
+        if (event.type == "move-stop") calculateBuffer(vertices);
       }
 
       /*********************************************************************
@@ -383,20 +391,20 @@
         // this watch handle will be resumed when user searches for a new location
         pausableWatchHandle.pause();
 
+        // debugger
         // Initial location for the center, edge and polylines on the view
         const viewCenter = view.center.clone();
         const centerScreenPoint = view.toScreen(viewCenter);
-        const centerPoint = view.toMap(centerScreenPoint.x + 120,
-          centerScreenPoint.y - 120);
-        const edgePoint = view.toMap(centerScreenPoint.x + 240,
-          centerScreenPoint.y - 120);
+        const centerPoint = view.toMap({x: centerScreenPoint.x + 120,
+          y: centerScreenPoint.y - 120});
+        const edgePoint = view.toMap({x: centerScreenPoint.x + 240,
+          y: centerScreenPoint.y - 120});
 
         // Store updated vertices
         const vertices = [
           [centerPoint.x, centerPoint.y],
           [edgePoint.x, edgePoint.y]
         ];
-
         // Create center, edge, polyline and buffer graphics for the first time
         if (!centerGraphic) {
           const polyline = new Polyline({
