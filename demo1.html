@@ -241,45 +241,75 @@
         // Listen to SketchViewModel's move events so that population pyramid chart
         // is updated as the graphics are updated
         // sketchViewModel.on("move-start", onMove);
-        sketchViewModel.on("update", onMove);
+        sketchViewModel.on("update", (e) => {console.log('update'); return onMove(e)});
         // sketchViewModel.on("move", onMove);
         // sketchViewModel.on("move-complete", onMove);
       }
+
+      view.on("drag", event => {
+        console.log('draggin', event)
+        if (activeGraphic) {
+          if (event.preventDefault) {
+            event.preventDefault();
+          }
+          return false;
+        }
+      })
 
       /*****************************************************************
        * Listen to view.click event to update the center or edge graphic
        *****************************************************************/
       function setUpGraphicClickHandle() {
-        view.on("click", function(event) {
+        view.on("pointer-down", function(event) {
+          console.log('pointer-down');
+          if (sketchViewModel.state === "active") {
+           return;
+          }
           view.hitTest(event).then(function(response) {
             const results = response.results;
+            console.log('results:', results)
             // Loop through results returned from hitTest
             results.forEach(function(result) {
+              // debugger
               // Call sketchViewModel.update method if point graphic is clicked
               if (result.graphic === edgeGraphic || result.graphic ===
                 centerGraphic) {
+                  console.log('yep')
                 // Save a reference to the current graphic being updated
                 activeGraphic = result.graphic;
                 sketchViewModel.update(result.graphic);
               }
             });
           });
+          // debugger
+          return event.preventDefault();
+          // return false;
         });
       }
+
+      document.addEventListener("drag", () => {
+        console.log('drag')
+        event.preventDefault();
+          return false;
+
+      })
 
       /*********************************************************************
        * Edge or center graphics are being moved. Recalculate the buffer with
        * updated geometry information and run the query stats again.
        *********************************************************************/
       function onMove(event) {
+        console.log('onMove')
         console.log(JSON.stringify(event))
-        if (!event.toolEventInfo) {
-          return
-        }
+        // if (!event.toolEventInfo) {
+        //   return
+        // }
         // debugger
         // User is moving the 'center' graphic.
         // Adjust other graphics based on the movement of the center graphic
+        console.log('active:', activeGraphic)
         if (activeGraphic === centerGraphic) {
+          console.log('moving center')
           // Update the reference graphic's geometry
           // debugger
           centerGraphic.geometry = event.graphics[0].geometry;
@@ -287,11 +317,14 @@
           // Calculate location of edgeGraphic
           // dx/dy values are in pixels
             // debugger
+            let dx = event.toolEventInfo?.dx || 0;
+            let dy = event.toolEventInfo?.dy || 0;
           const edgeScreenPoint = view.toScreen(edgeGraphic.geometry);
-          const edgeX = edgeScreenPoint.x + event.toolEventInfo.dx;
-          const edgeY = edgeScreenPoint.y + event.toolEventInfo.dy;
+          const edgeX = edgeScreenPoint.x + dx;
+          const edgeY = edgeScreenPoint.y + dy;
 
           edgeGraphic.geometry = view.toMap({x: edgeX, y: edgeY});
+          // debugger
         }
         // User is moving on the 'edge' graphic.
         // Resize the polyline graphic and recalculate the buffer polygon
@@ -300,13 +333,14 @@
           edgeGraphic.geometry = event.graphics[0].geometry;
         }
 
-        const vertices = [
+        // client-side stats query of features that intersect the buffer
+        if (event.type == "move-stop") {
+          const vertices = [
           [centerGraphic.geometry.x, centerGraphic.geometry.y],
           [edgeGraphic.geometry.x, edgeGraphic.geometry.y]
         ];
-
-        // client-side stats query of features that intersect the buffer
-        if (event.type == "move-stop") calculateBuffer(vertices);
+          calculateBuffer(vertices);
+        }
       }
 
       /*********************************************************************
