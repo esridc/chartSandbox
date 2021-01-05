@@ -98,38 +98,20 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   }
 
   //
-  // FILTERING
+  // CHARTING
   //
 
-  // add a filter, choosing the appropriate widget based on fieldType and various properties
-  async function addFilter({event = null, fieldName = null, fieldStats = null}) {
+  // add a chart, making a best guess at appropriate style based on fieldType and various properties
+  async function addChart({event = null, fieldName = null, fieldStats = null}) {
     let {view, layer} = state;
     // if no fieldName is passed directly, get it from the attribute selection event
     if (fieldName == null) fieldName = event.currentTarget.dataset.field;
     const field = await getDatasetField(fieldName);
 
-    let filter = document.createElement('div');
-    filter.classList.add('filterDiv');
+    let chart = document.createElement('div');
+    chart.classList.add('chartDiv');
     fieldStats = fieldStats ? fieldStats : field.statistics;
-    filter.innerHTML = await generateLabel(field, fieldStats);
-
-    // actions
-    let icons = document.createElement('span');
-    icons.innerHTML = "&nbsp🅧&nbsp";
-    icons.onclick = removeFilter;
-    icons.classList.add('filterIcons');
-    let tooltip = document.createElement('span');
-    tooltip.classList.add('tooltip')
-    tooltip.innerText = "Delete filter";
-
-    filter.appendChild(icons);
-    icons.insertBefore(tooltip, icons.firstChild)
-
-    let filtersList = document.getElementById('filtersList');
-    filtersList.appendChild(filter);
-    document.getElementById('filtersCount').innerHTML = `Applying ${filtersList.children.length} filters`;
-    let container = document.createElement('div');
-    filter.appendChild(container);
+    chart.innerHTML = await generateLabel(field, fieldStats);
 
     const numberLike = await datasetFieldIsNumberLike(fieldName);
 
@@ -677,11 +659,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   // UTILITY FUNCTIONS
   //
 
-  // list all known widget DOM elements
-  function listWidgetElements() {
-    return [...document.getElementById('filtersList').querySelectorAll('[whereClause]')];
-  }
-
   // concatenate all the where clauses from all the widgets
   function concatWheres( { server = false } = {}) {
     let whereClause = '';
@@ -703,15 +680,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       // whereClause += '(' + widget.getAttribute('whereClause') + ')';
     }
     return whereClause;
-  }
-
-  async function removeFilter(event, fieldName = null) {
-    fieldName = fieldName ? fieldName : event.currentTarget.dataset.field;
-    let filter = event.currentTarget.parentElement;
-    let filtersList = filter.parentElement;
-    filter.remove();
-    document.getElementById('filtersCount').innerHTML = `Applying ${filtersList.children.length} filters`;
-    updateLayerViewEffect();
   }
 
   // draw whole map from scratch
@@ -820,27 +788,17 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     // update state
     state = {...state, layer, dataset};
 
-    // clear filters list
-    clearFilters();
-
     // clear widgets list
     state.widgets = [];
 
     // update attributes lists
-    updateAttributeList('#filterAttributeList', () => addFilter({event}) );
-    updateAttributeList('#styleAttributeList', () => autoStyle({event}) );
+    updateAttributeList('#chartAttributeList', () => addChart({event}) );
 
-    let filterAttributeSearchElement = document.getElementById("filterAttributeSearch")
-    filterAttributeSearchElement.addEventListener("input", filterAttributeSearchInput);
-    filterAttributeSearchElement.addEventListener("change", filterAttributeSearchChange); // clear input button
-    let filterPlaceholderText = `Search ${dataset.attributes.fields.length} Attributes by Name`;
-    filterAttributeSearchElement.setAttribute('placeholder', filterPlaceholderText);
-
-    let styleAttributeSearchElement = document.getElementById("styleAttributeSearch")
-    styleAttributeSearchElement.addEventListener("input", styleAttributeSearchInput);
-    styleAttributeSearchElement.addEventListener("change", styleAttributeSearchChange); // clear input button
-    let stylePlaceholderText = `Search ${dataset.attributes.fields.length} Attributes by Name`;
-    styleAttributeSearchElement.setAttribute('placeholder', stylePlaceholderText);
+    let chartAttributeSearchElement = document.getElementById("chartAttributeSearch")
+    chartAttributeSearchElement.addEventListener("input", chartAttributeSearchInput);
+    chartAttributeSearchElement.addEventListener("change", chartAttributeSearchChange); // clear input button
+    let chartPlaceholderText = `Search ${dataset.attributes.fields.length} Attributes by Name`;
+    chartAttributeSearchElement.setAttribute('placeholder', chartPlaceholderText);
 
     state.usePredefinedStyle = false; // disable for now
     // draw map once before autoStyling because getBgColor() requires an initialized layerView object
@@ -1673,8 +1631,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   }
 
   // filter attribute entries by search
-  function filterAttributeSearchInput(e) {
-    Array.from(document.getElementById('filterAttributeList').children)
+  function chartAttributeSearchInput(e) {
+    Array.from(document.getElementById('chartAttributeList').children)
     .map(x => {
       let field = x.getAttribute('data-field');
       let fieldName = getDatasetField(field).alias.toLowerCase();
@@ -1682,8 +1640,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     });
 }
   // only triggered by the clear search x button
-  function filterAttributeSearchChange(e) {
-    Array.from(document.getElementById('filterAttributeList').children)
+  function chartAttributeSearchChange(e) {
+    Array.from(document.getElementById('chartAttributeList').children)
       .map(x => {
         let field = x.getAttribute('data-field');
         let fieldName = getDatasetField(field).alias.toLowerCase();
@@ -1691,45 +1649,12 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       });
   }
 
-  // filter attribute entries by search
-  // TODO: combine these two with the above two, by passing list as a param?
-  function styleAttributeSearchInput(e) {
-    Array.from(document.getElementById('styleAttributeList').children)
-    .map(x => {
-      let field = x.getAttribute('data-field');
-      let fieldName = getDatasetField(field).alias.toLowerCase();
-      x.style.display = fieldName.indexOf(e.srcElement.value) == -1 ? 'none' : 'flex';
-    });
-  }
-
-  // only triggered by the clear search x button
-  function styleAttributeSearchChange(e) {
-    Array.from(document.getElementById('styleAttributeList').children)
-    .map(x => {
-      let field = x.getAttribute('data-field');
-      let fieldName = getDatasetField(field).alias.toLowerCase();
-      x.style.display = 'flex';
-    });
-  }
-
-  // clear filters list and reset filters UI
-  function clearFilters() {
-    let filtersList = document.getElementById('filtersList');
-    // while there are entries in the list,
-    while (filtersList.firstChild) {
-      // remove the last one in the list
-      filtersList.removeChild(filtersList.lastChild);
-    }
-    document.getElementById('filtersCount').innerHTML = `Applying ${filtersList.children.length} filters`;
-    document.getElementById('featuresCount').innerHTML = '';
-  }
-
 
   // TESTS
   // autoStyle({});
   // autoStyle({fieldName:"CITY"});
   // autoStyle({fieldName:"parametersProjectObservationUID"});
-  // addFilter({fieldName:"observationResult"});
-  // addFilter({fieldName:"PROJECT_NUMBER"});
+  // addChart({fieldName:"observationResult"});
+  // addChart({fieldName:"PROJECT_NUMBER"});
 
 })();
