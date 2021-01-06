@@ -16,7 +16,7 @@
   name="viewport"
   content="initial-scale=1,maximum-scale=1,user-scalable=no"
   />
-  <title>AutoStyle Demo</title>
+  <title>Charts Demo</title>
   <link href="charts.css" rel="stylesheet">
 
   <script src="https://unpkg.com/lodash@4.17.15/lodash.js"></script>
@@ -45,6 +45,20 @@
   <script src="https://unpkg.com/lodash@4.17.15/lodash.js"></script>
   <script src="https://cdn.jsdelivr.net/autocomplete.js/0/autocomplete.min.js"></script>
 
+  <!-- cedar -->
+    <!-- load the amCharts base library -->
+    <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+    <!-- in this case, we only need bar charts, so we'll load the appropriate amCharts script -->
+    <script src="https://www.amcharts.com/lib/3/serial.js"></script>
+    <!-- load the arcgis-rest-js scripts -->
+    <script src="https://unpkg.com/@esri/arcgis-rest-request"></script>
+    <script src="https://unpkg.com/@esri/arcgis-rest-feature-layer"></script>
+    <!-- optionally load an amcharts theme; cedar provides a calcite theme -->
+    <script src="https://unpkg.com/@esri/cedar/dist/umd/themes/amCharts/calcite.js"></script>
+    <!-- load cedar -->
+    <script src="https://unpkg.com/@esri/cedar/dist/umd/cedar.js"></script>
+
+  <!-- main demo module -->
   <script type="module" src="charts.mjs"></script>
 </head>
 
@@ -72,6 +86,10 @@
 
     </div>
   </div>
+
+  <div id="chart" class="esri-widget">
+  </div>
+
   <div id="viewDiv"></div>
 </body>
 </html>

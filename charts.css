@@ -311,3 +311,11 @@ body,
   color: #666;
   background-color: #ddd;
 }
+
+#chart {
+  height: 200px; width: 400px;
+}
+
+.amcharts-chart-div > a {
+  visibility: hidden;
+}

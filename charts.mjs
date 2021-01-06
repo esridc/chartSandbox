@@ -104,6 +104,30 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   // add a chart, making a best guess at appropriate style based on fieldType and various properties
   async function addChart({event = null, fieldName = null, fieldStats = null}) {
     let {view, layer} = state;
+
+    view.ui.add('chart', 'bottom-left');
+    var definition = {
+      type: "bar",
+      datasets: [
+        {
+          url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0",
+          query: {
+            orderByFields: "POPULATION DESC"
+          }
+        }
+      ],
+      series: [
+        {
+          category: { field: "STATE_NAME", label: "US State" },
+          value: { field: "POPULATION", label: "Population" }
+        }
+      ]
+    };
+
+    var cedarChart = new cedar.Chart("chart", definition);
+    cedarChart.show();
+    return;
+
     // if no fieldName is passed directly, get it from the attribute selection event
     if (fieldName == null) fieldName = event.currentTarget.dataset.field;
     const field = await getDatasetField(fieldName);
