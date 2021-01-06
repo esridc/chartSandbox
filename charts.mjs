@@ -709,26 +709,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       ui: { components: [] }
     });
 
-    // add toggle checkboxes
-
-    view.ui.add('zoomToData', 'top-right');
-    const zoomToDataCheckbox = document.querySelector('#zoomToData calcite-checkbox');
-    zoomToDataCheckbox.addEventListener('calciteCheckboxChange', () => {
-      updateLayerViewEffect();
-    });
-
-    view.ui.add('darkMode', 'top-right');
-    darkModeCheckbox.addEventListener('calciteCheckboxChange', async () => {
-      state.view = await drawMap();
-      autoStyle({fieldName: state.fieldName})
-    });
-
-    view.ui.add('labels', 'top-right');
-    const labelsCheckbox = document.querySelector('#labels calcite-checkbox');
-    labelsCheckbox.addEventListener('calciteCheckboxChange', () => {
-      autoStyle({fieldName: state.fieldName})
-    });
-
     // put vars on window for debugging
     Object.assign(window, { state, map, getDatasetField, getDatasetFieldUniqueValues, /*histogram, histogramValues,*/ generateHistogram, HistogramRangeSlider, uniqueValues });
 
@@ -1563,7 +1543,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   async function updateLayerViewEffect({
       // calculate where clause if isn't passed as an argument
       where = concatWheres(),
-      updateExtent = document.querySelector('#zoomToData calcite-checkbox')?.checked } = {}) {
+      updateExtent = true } = {}) {
     const {view, layer, bgColor} = state;
     // attach to the layerView
     const layerView = await view.whenLayerView(layer);
