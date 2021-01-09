@@ -103,23 +103,33 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
   // add a chart, making a best guess at appropriate style based on fieldType and various properties
   async function addChart({event = null, fieldName = null, fieldStats = null}) {
-    let {view, layer} = state;
+    console.log('adChart:', arguments);
+    let {view, layer, dataset} = state;
 
+    // if no fieldName is passed directly, get it from the attribute selection event
+    if (fieldName == null) fieldName = event.currentTarget.dataset.field;
+    const field = await getDatasetField(fieldName);
+
+    // debugger
     view.ui.add('chart', 'bottom-left');
     var definition = {
       type: "bar",
       datasets: [
         {
-          url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0",
+          // url: "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized/FeatureServer/0",
+          url: dataset.attributes.url,
           query: {
-            orderByFields: "POPULATION DESC"
+            // orderByFields: "POPULATION DESC"
+            orderByFields: fieldName
           }
         }
       ],
       series: [
         {
-          category: { field: "STATE_NAME", label: "US State" },
-          value: { field: "POPULATION", label: "Population" }
+          // category: { field: "STATE_NAME", label: "US State" },
+          // value: { field: "POPULATION", label: "Population" }
+          category: { field: fieldName, label: fieldName },
+          value: { field: fieldName, label: fieldName }
         }
       ]
     };
@@ -127,10 +137,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     var cedarChart = new cedar.Chart("chart", definition);
     cedarChart.show();
     return;
-
-    // if no fieldName is passed directly, get it from the attribute selection event
-    if (fieldName == null) fieldName = event.currentTarget.dataset.field;
-    const field = await getDatasetField(fieldName);
 
     let chart = document.createElement('div');
     chart.classList.add('chartDiv');
@@ -1656,7 +1662,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
   // TESTS
   // autoStyle({});
-  // autoStyle({fieldName:"CITY"});
+  // autoStyle({fieldName:"AMERIND_CY"});
+  addChart({fieldName:"AMERIND_CY"});
   // autoStyle({fieldName:"parametersProjectObservationUID"});
   // addChart({fieldName:"observationResult"});
   // addChart({fieldName:"PROJECT_NUMBER"});
