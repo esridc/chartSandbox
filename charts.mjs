@@ -103,7 +103,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
   // add a chart, making a best guess at appropriate style based on fieldType and various properties
   async function addChart({event = null, fieldName = null, fieldStats = null}) {
-    console.log('adChart:', arguments);
+    console.log('addChart:', arguments);
     let {view, layer, dataset} = state;
 
     // if no fieldName is passed directly, get it from the attribute selection event
@@ -128,14 +128,45 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
         {
           // category: { field: "STATE_NAME", label: "US State" },
           // value: { field: "POPULATION", label: "Population" }
-          category: { field: fieldName, label: fieldName },
-          value: { field: fieldName, label: fieldName }
+          category: { field: "NAME", label: "NAME" },
+          value: { field: fieldName, label: fieldName },
         }
-      ]
+      ],
+      overrides: {
+        "listeners": [
+          {
+            "event": "rendered",
+            "method": e => console.log('render')
+            },
+          {
+            "event": "zoomed",
+            "method": e => console.log('zoom')
+          },
+          {
+            "event": "clicked",
+            "method": e => console.log('clicked')
+          },
+          {
+            "event": "changed",
+            "method": e => {
+              console.log('changed', e);
+              var xValue = e.chart.categoryAxis.coordinateToValue(e.x);
+              var yValue = AmCharts.roundTo(e.chart.valueAxes[0].coordinateToValue(e.y), 2);
+              console.log(xValue + ", " + yValue);
+            }
+          },
+        ],
+      },
     };
 
     var cedarChart = new cedar.Chart("chart", definition);
-    cedarChart.show();
+    window.chart = cedarChart;
+    cedarChart.show()
+      .then(e => {
+        //
+      });
+    // debugger
+
     return;
 
     let chart = document.createElement('div');
