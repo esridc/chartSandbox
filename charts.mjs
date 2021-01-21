@@ -1293,20 +1293,20 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     // ADD LEGEND
 
     var {legend, view} = state;
-    if (fieldName) {
-      // remove and replace legend entirely rather than updating, to avoid dojo issues
-      view.ui.remove(legend);
-      legend = await new Legend({
-        view,
-      })
-      legend.layerInfos = [{
-        layer,
-      }]
-      view.ui.add(legend, "bottom-right");
-    } else {
-      view.ui.remove(legend);
-      legend = null;
-    }
+    // if (fieldName) {
+    //   // remove and replace legend entirely rather than updating, to avoid dojo issues
+    //   view.ui.remove(legend);
+    //   legend = await new Legend({
+    //     view,
+    //   })
+    //   legend.layerInfos = [{
+    //     layer,
+    //   }]
+    //   view.ui.add(legend, "bottom-right");
+    // } else {
+    //   view.ui.remove(legend);
+    //   legend = null;
+    // }
 
     layer.renderer = renderer; // replace the old renderer
     layer.refresh(); // ensure the layer draws
