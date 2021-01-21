@@ -153,6 +153,9 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
               var xValue = e.chart.categoryAxis.coordinateToValue(e.x);
               var yValue = AmCharts.roundTo(e.chart.valueAxes[0].coordinateToValue(e.y), 2);
               console.log(xValue + ", " + yValue);
+              let feature = e.chart.chartData.filter(i => i.dataContext.NAME == xValue)[0];
+              let title = e.chart.valueAxes[0].title
+              console.log(title, ":", feature.dataContext[title])
             }
           },
         ],
