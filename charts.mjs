@@ -797,11 +797,37 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     document.querySelector('#orgName').innerHTML = dataset.attributes.orgName || '';
     document.querySelector('#recordCount').innerHTML = `${dataset.attributes.recordCount} records`;
 
+    view.on("pointer-move", function(evt) {
+      var screenPoint = {
+        x: evt.x,
+        y: evt.y
+      };
+
+      // the hitTest() checks to see if any graphics in the view
+      // intersect the given screen x, y coordinates
+      view.hitTest(screenPoint)
+        .then( function(response){
+          // changeCursor(response);
+          getGraphics(response);
+        });
+      });
+
     // update state
     state.view = view;
     // bgColor needs state.view to be set first
     state.bgColor = await getBgColor();
     return view;
+  }
+
+  function getGraphics(response) {
+    // get the topmost graphic from the hover location
+    // and display select attribute values from the
+    // graphic to the user
+    var graphic = response.results[0].graphic;
+    var attributes = graphic.attributes;
+    var name = attributes.NAME;
+
+    if (name) console.log('name:', name)
   }
 
   // update layerview filter based on histogram widget, throttled
