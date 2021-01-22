@@ -79,6 +79,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       legend: null,
       categoricalMax: 7,
       fieldName: null,
+      highlights: [],
     }
   }
 
@@ -148,7 +149,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
           },
           {
             "event": "changed",
-            "method": e => {
+            "method": async e => {
+              let {highlights} = state;
               console.log('changed', e);
               var xValue = e.chart.categoryAxis.coordinateToValue(e.x);
               var yValue = AmCharts.roundTo(e.chart.valueAxes[0].coordinateToValue(e.y), 2);
@@ -156,7 +158,20 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
               let feature = e.chart.chartData.filter(i => i.dataContext.NAME == xValue)[0];
               let title = e.chart.valueAxes[0].title
               console.log(title, ":", feature.dataContext[title])
-            }
+
+              var query = layer.createQuery();
+              query.where =
+                `NAME = '${xValue}'`;
+              console.log('query.where:', query.where)
+              let layerView = await view.whenLayerView(layer);
+              layer.queryFeatures(query).then(result => {
+                console.log('result.features:', result.features[0].attributes.NAME)
+                if (highlights) {
+                  highlights.forEach(h => h.remove())
+                }
+                state.highlights.push(layerView.highlight(result.features));
+                window.highlights = state.highlights;
+              });            }
           },
         ],
       },
@@ -770,7 +785,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       container: "viewDiv",
       map: map,
       extent: getDatasetExtent(dataset),
-      ui: { components: [] }
+      ui: { components: [] },
+      highlightOptions: { color: [255, 241, 58], fillOpacity: 0.4 },
     });
 
     // put vars on window for debugging
