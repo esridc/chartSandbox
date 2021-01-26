@@ -82,6 +82,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       highlights: [],
     }
   }
+  var chart, cedarChart, guide;
+  var matches = [];
 
   const DATASET_FIELD_UNIQUE_VALUES = {}; // cache by field name
 
@@ -142,7 +144,10 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
               // e.chart.graphs[0].colorField = "color"; // either works
               e.chart.graphs[0].fillColorsField = "color"; // either works
               e.chart.graphs[0].lineColorField = "color";
-              window.chart = e.chart
+              chart = e.chart;
+              window.chart = e.chart;
+              guide = new AmCharts.Guide();
+              chart.categoryAxis.addGuide(guide);
             },
           },
           {
@@ -197,7 +202,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       },
     };
 
-    var cedarChart = new cedar.Chart("chart", definition);
+    cedarChart = new cedar.Chart("chart", definition);
     window.cedarchart = cedarChart;
     cedarChart.show()
       .then(e => {
@@ -207,7 +212,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
     return;
 
-    let chart = document.createElement('div');
+    // let chart = document.createElement('div');
     chart.classList.add('chartDiv');
     fieldStats = fieldStats ? fieldStats : field.statistics;
     chart.innerHTML = await generateLabel(field, fieldStats);
@@ -780,7 +785,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     }
     return whereClause;
   }
-var matches = [];
+
   // draw whole map from scratch
   async function drawMap() {
     var {dataset, layer, view} = state;
@@ -832,7 +837,7 @@ var matches = [];
             // console.log('matches:', matches)
         });
 
-      if (matches.length) {
+      if (matches && matches.length) {
         var match = matches.pop();
         try {
           var name = match.results[0]?.graphic?.attributes?.NAME;
@@ -872,39 +877,37 @@ var matches = [];
 
     if (name) {
       console.log('name:', name)
-      let match = chart.dataProvider.filter(i => i["NAME"] === name)[0]
+      // let match = chart.dataProvider.filter(i => i["NAME"] === name)[0]
       // reset color
-      if (matches) {
-        chart.dataProvider.forEach(i=> i.color = undefined);
-        // matches.forEach(i => i.color = undefined)
-        matches = [];
-        console.log('clear')
-      }
+      // if (matches) {
+      //   // chart.dataProvider.forEach(i=> i.color = undefined);
+      //   // matches.forEach(i => i.color = undefined)
+      //   // matches = [];
+      //   console.log('clear')
+      // }
 
-      chart.categoryAxis.guides = []
+      // chart.categoryAxis.guides = []
       // [{
       //   "NAME": name,
       //   "fillAlpha": .5,
       //   "fillColor": "#00ff88"
       // }];
-      // console.log('guides:', chart.guides)
-      let guide = new AmCharts.Guide();
+      // console.log('guides:', chart.categoryAxis.guides[0])
       guide.category = name;
       guide.toCategory = name;
 
-      guide.fillAlpha = .5;
-      guide.fillColor = "#00ff88";
-      chart.categoryAxis.addGuide(guide);
+      guide.fillAlpha = 1;
+      guide.fillColor = "#ff0000";
       // debugger
 
-      // guide.
-      match.color = "red";
-      match.lineColor = "red";
-      match.fillColors = "red";
+      // match.color = "red";
+      // match.lineColor = "red";
+      // match.fillColors = "red";
       // matches.push(match);
 
       // debugger
-      chart.parseData(); // works
+      // chart.parseData(); // works
+      chart.categoryAxis.draw(); // AH HA - update guides
 
       // or:
 
