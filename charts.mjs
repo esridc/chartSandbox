@@ -139,7 +139,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
             "event": "init",
             "method": e => {
               console.log('init', e)
-              e.chart.graphs[0].colorField = "color";
+              // e.chart.graphs[0].colorField = "color"; // either works
+              e.chart.graphs[0].fillColorsField = "color"; // either works
               e.chart.graphs[0].lineColorField = "color";
               window.chart = e.chart
             },
@@ -151,6 +152,19 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
           {
             "event": "clicked",
             "method": e => console.log('clicked')
+          },
+          {
+            "event": "clickGraphItem",
+            "method": e => {
+              console.log('clickGraphItem', e)
+
+              // e.item.color = "red";
+              e.item.lineColor = "red";
+              e.item.fillColors = "red";
+              // debugger
+              e.chart.drawChart(); // why does drawChart work here but not without an event?
+              // e.chart.parseData(); // why does drawChart work here but not without an event?
+            }
           },
           {
             "event": "changed",
@@ -766,7 +780,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     }
     return whereClause;
   }
-
+var matches = [];
   // draw whole map from scratch
   async function drawMap() {
     var {dataset, layer, view} = state;
@@ -813,9 +827,24 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       // intersect the given screen x, y coordinates
       view.hitTest(screenPoint)
         .then( function(response){
-          getGraphics(response);
+            matches.push(response);
+            // debugger
+            // console.log('matches:', matches)
         });
-      });
+
+      if (matches.length) {
+        var match = matches.pop();
+        try {
+          var name = match.results[0]?.graphic?.attributes?.NAME;
+          if (name) {
+            console.log('match:', name);
+            getGraphics(match);
+          }
+        } catch(e) {
+        }
+        matches = [];
+      }
+    });
 
     // update state
     state.view = view;
@@ -823,12 +852,20 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     state.bgColor = await getBgColor();
     return view;
   }
-  var current = null;
+
+  window.matches = matches;
 
   function getGraphics(response) {
     // get the topmost graphic from the hover location
     // and display select attribute values from the
     // graphic to the user
+    console.log('response:', response)
+    if (!response.results) {
+      matches.forEach(i => i.color = undefined)
+      matches = [];
+      console.log('clear')
+      return false;
+    }
     var graphic = response.results[0].graphic;
     var attributes = graphic.attributes;
     var name = attributes.NAME;
@@ -837,11 +874,36 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       console.log('name:', name)
       let match = chart.dataProvider.filter(i => i["NAME"] === name)[0]
       // reset color
-      if (current) current.color = undefined;
-      current = match;
+      if (matches) {
+        chart.dataProvider.forEach(i=> i.color = undefined);
+        // matches.forEach(i => i.color = undefined)
+        matches = [];
+        console.log('clear')
+      }
 
+      chart.categoryAxis.guides = []
+      // [{
+      //   "NAME": name,
+      //   "fillAlpha": .5,
+      //   "fillColor": "#00ff88"
+      // }];
+      // console.log('guides:', chart.guides)
+      let guide = new AmCharts.Guide();
+      guide.category = name;
+      guide.toCategory = name;
+
+      guide.fillAlpha = .5;
+      guide.fillColor = "#00ff88";
+      chart.categoryAxis.addGuide(guide);
+      // debugger
+
+      // guide.
       match.color = "red";
+      match.lineColor = "red";
+      match.fillColors = "red";
+      // matches.push(match);
 
+      // debugger
       chart.parseData(); // works
 
       // or:
@@ -850,6 +912,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       // chart.invalidateSize(); // works
       // chart.validateData(); // works
       // chart.validateNow(); // works
+      // chart.renderFix(); // nope
+      // chart.drawChart(); // nope
     }
 
   }
