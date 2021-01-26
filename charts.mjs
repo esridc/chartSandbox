@@ -162,7 +162,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
               console.log(xValue + ", " + yValue);
               let feature = e.chart.chartData.filter(i => i.dataContext.NAME == xValue)[0];
               let title = e.chart.valueAxes[0].title
-              console.log(title, ":", feature.dataContext[title])
+              let name = feature.category;
+              console.log(title, ":", name)
 
               var query = layer.createQuery();
               query.where =
@@ -183,7 +184,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     };
 
     var cedarChart = new cedar.Chart("chart", definition);
-    window.chart = cedarChart;
+    window.cedarchart = cedarChart;
     cedarChart.show()
       .then(e => {
         //
@@ -812,7 +813,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       // intersect the given screen x, y coordinates
       view.hitTest(screenPoint)
         .then( function(response){
-          // changeCursor(response);
           getGraphics(response);
         });
       });
@@ -861,7 +861,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     },
     50
   );
-
 
   async function loadDataset (args) {
     // reset state
