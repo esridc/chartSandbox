@@ -136,9 +136,14 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       overrides: {
         "listeners": [
           {
-            "event": "rendered",
-            "method": e => console.log('render')
+            "event": "init",
+            "method": e => {
+              console.log('init', e)
+              e.chart.graphs[0].colorField = "color";
+              e.chart.graphs[0].lineColorField = "color";
+              window.chart = e.chart
             },
+          },
           {
             "event": "zoomed",
             "method": e => console.log('zoom')
