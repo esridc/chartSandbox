@@ -877,46 +877,15 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
     if (name) {
       console.log('name:', name)
-      // let match = chart.dataProvider.filter(i => i["NAME"] === name)[0]
-      // reset color
-      // if (matches) {
-      //   // chart.dataProvider.forEach(i=> i.color = undefined);
-      //   // matches.forEach(i => i.color = undefined)
-      //   // matches = [];
-      //   console.log('clear')
-      // }
+      let matchIndex = chart.dataProvider.findIndex(m => m["NAME"] == name);
+      let match = chart.dataProvider[matchIndex];
 
-      // chart.categoryAxis.guides = []
-      // [{
-      //   "NAME": name,
-      //   "fillAlpha": .5,
-      //   "fillColor": "#00ff88"
-      // }];
-      // console.log('guides:', chart.categoryAxis.guides[0])
-      guide.category = name;
-      guide.toCategory = name;
+      guide.category = chart.dataProvider[matchIndex-1].NAME; // start guide highlight from here
+      guide.toCategory = name; // end guide highlight here
 
       guide.fillAlpha = 1;
       guide.fillColor = "#ff0000";
-      // debugger
-
-      // match.color = "red";
-      // match.lineColor = "red";
-      // match.fillColors = "red";
-      // matches.push(match);
-
-      // debugger
-      // chart.parseData(); // works
       chart.categoryAxis.draw(); // AH HA - update guides
-
-      // or:
-
-      // chart.dataChanged = true; // not needed with parseData()
-      // chart.invalidateSize(); // works
-      // chart.validateData(); // works
-      // chart.validateNow(); // works
-      // chart.renderFix(); // nope
-      // chart.drawChart(); // nope
     }
 
   }
