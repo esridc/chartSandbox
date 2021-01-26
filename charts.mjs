@@ -822,7 +822,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     document.querySelector('#orgName').innerHTML = dataset.attributes.orgName || '';
     document.querySelector('#recordCount').innerHTML = `${dataset.attributes.recordCount} records`;
 
-    view.on("pointer-move", function(evt) {
+    view.on("pointer-move", async function(evt) {
       var screenPoint = {
         x: evt.x,
         y: evt.y
@@ -843,6 +843,26 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
           var name = match.results[0]?.graphic?.attributes?.NAME;
           if (name) {
             console.log('match:', name);
+            var query = layer.createQuery();
+            query.where =
+              `NAME = '${name}'`;
+            // console.log('query.where:', query.where)
+            var layerView = view.whenLayerView(layer).then(layerView => {
+            if (layerView) {
+              console.log('layerView:', layerView)
+              layer.queryFeatures(query).then(result => {
+                let {highlights} = state;
+
+                if (highlights) {
+                  highlights.forEach(h => h.remove())
+                }
+                // debugger
+                state.highlights.push(layerView.highlight(result.features));
+                window.highlights = state.highlights;
+              });
+            }
+          });
+
             getGraphics(match);
           }
         } catch(e) {
