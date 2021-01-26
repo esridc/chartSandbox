@@ -823,6 +823,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     state.bgColor = await getBgColor();
     return view;
   }
+  var current = null;
 
   function getGraphics(response) {
     // get the topmost graphic from the hover location
@@ -832,7 +833,25 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     var attributes = graphic.attributes;
     var name = attributes.NAME;
 
-    if (name) console.log('name:', name)
+    if (name) {
+      console.log('name:', name)
+      let match = chart.dataProvider.filter(i => i["NAME"] === name)[0]
+      // reset color
+      if (current) current.color = undefined;
+      current = match;
+
+      match.color = "red";
+
+      chart.parseData(); // works
+
+      // or:
+
+      // chart.dataChanged = true; // not needed with parseData()
+      // chart.invalidateSize(); // works
+      // chart.validateData(); // works
+      // chart.validateNow(); // works
+    }
+
   }
 
   // update layerview filter based on histogram widget, throttled
