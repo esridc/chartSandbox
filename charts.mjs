@@ -172,31 +172,17 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
             }
           },
           {
-            "event": "changed",
+            "event": "changed", // cursor position has changed on the chart
             "method": async e => {
-              let {highlights} = state;
-              console.log('changed', e);
               var xValue = e.chart.categoryAxis.coordinateToValue(e.x);
               var yValue = AmCharts.roundTo(e.chart.valueAxes[0].coordinateToValue(e.y), 2);
-              console.log(xValue + ", " + yValue);
               let feature = e.chart.chartData.filter(i => i.dataContext.NAME == xValue)[0];
               let title = e.chart.valueAxes[0].title
               let name = feature.category;
-              console.log(title, ":", name)
+              console.log(`Chart item: ${name}`)
 
-              var query = layer.createQuery();
-              query.where =
-                `NAME = '${xValue}'`;
-              console.log('query.where:', query.where)
-              let layerView = await view.whenLayerView(layer);
-              layer.queryFeatures(query).then(result => {
-                console.log('result.features:', result.features[0].attributes.NAME)
-                if (highlights) {
-                  highlights.forEach(h => h.remove())
-                }
-                state.highlights.push(layerView.highlight(result.features));
-                window.highlights = state.highlights;
-              });            }
+              // highlightFeature(match);
+            }
           },
         ],
       },
@@ -813,6 +799,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       ui: { components: [] },
       highlightOptions: { color: [255, 241, 58], fillOpacity: 0.4 },
     });
+    view.whenLayerView(layer).then(r => state.layerView = r);
 
     // put vars on window for debugging
     Object.assign(window, { state, map, getDatasetField, getDatasetFieldUniqueValues, /*histogram, histogramValues,*/ generateHistogram, HistogramRangeSlider, uniqueValues });
@@ -823,6 +810,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     document.querySelector('#recordCount').innerHTML = `${dataset.attributes.recordCount} records`;
 
     view.on("pointer-move", async function(evt) {
+      let {layerView, highlights} = state;
       var screenPoint = {
         x: evt.x,
         y: evt.y
@@ -833,6 +821,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       view.hitTest(screenPoint)
         .then( function(response){
             matches.push(response);
+            // highlightFeature(response);
             // debugger
             // console.log('matches:', matches)
         });
@@ -843,29 +832,25 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
           var name = match.results[0]?.graphic?.attributes?.NAME;
           if (name) {
             console.log('match:', name);
-            var query = layer.createQuery();
-            query.where =
-              `NAME = '${name}'`;
-            // console.log('query.where:', query.where)
-            var layerView = view.whenLayerView(layer).then(layerView => {
-            if (layerView) {
-              console.log('layerView:', layerView)
-              layer.queryFeatures(query).then(result => {
-                let {highlights} = state;
+            // var query = layer.createQuery();
+            // query.where =
+            //   `NAME = '${name}'`;
+            // console.log('layerView:', layerView)
+            // layer.queryFeatures(query).then(result => {
+            //   let {highlights} = state;
+            //   if (highlights) {
+            //     highlights.forEach(h => h.remove())
+            //   }
+            //   state.highlights.push(layerView.highlight(result.features));
+            //   window.highlights = state.highlights;
+            // });
 
-                if (highlights) {
-                  highlights.forEach(h => h.remove())
-                }
-                // debugger
-                state.highlights.push(layerView.highlight(result.features));
-                window.highlights = state.highlights;
-              });
-            }
-          });
-
-            getGraphics(match);
+            drawGuides(match);
+            highlightFeature(match);
           }
+
         } catch(e) {
+          //
         }
         matches = [];
       }
@@ -878,9 +863,29 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     return view;
   }
 
+  function highlightFeature(response) {
+    console.log('highlightFeature:', response)
+    let {view} = state;
+    var result = response.results[0];
+    var symbol = {
+      type: "simple-fill",
+      color: [255,255,0,0.0],
+      style: "solid",
+      outline: {
+        color: [102,0,204],
+        width: 5
+      }
+    };
+    view.graphics.removeAll();
+    if (result) {
+      var selectionGraphic = result.graphic;
+      selectionGraphic.symbol = symbol;
+      view.graphics.add(selectionGraphic);
+    }
+  }
   window.matches = matches;
 
-  function getGraphics(response) {
+  function drawGuides(response) {
     // get the topmost graphic from the hover location
     // and display select attribute values from the
     // graphic to the user
