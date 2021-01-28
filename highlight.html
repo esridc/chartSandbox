@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <meta
+      name="description"
+      content="[Highlight features with hover events - 4.11]"
+    />
+    <!--  ArcGIS API for JavaScript, https://js.arcgis.com  For more information about the view-hittest sample, read the original sample description at developers.arcgis.com.  https://developers.arcgis.com/javascript/latest/view-hittest/index.html  -->
+    <title>Highlight features with hover events - 4.11</title>
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.11/esri/css/main.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.11/dijit/themes/claro/claro.css"
+    />
+    <script src="https://js.arcgis.com/4.11/"></script>
+    <script>
+      var dialog, dRenderer;
+         require([      "esri/core/watchUtils",      "esri/Map",      "esri/views/MapView",      "esri/layers/FeatureLayer",      "esri/renderers/UniqueValueRenderer",      "esri/symbols/SimpleLineSymbol",      "dojo/dom",      "dojo/dom-style",      "dijit/popup",      "dojo/domReady!"    ], function (      watchUtils,      Map,      MapView,      FeatureLayer,      UniqueValueRenderer,      SimpleLineSymbol,      dom,      domStyle,      dijitPopup    ) {      var layer = new FeatureLayer({        url: "https://services.arcgis.com/8Pc9XBTAsYuxx9Ny/arcgis/rest/services/BuildingFootprint2D_gdb/FeatureServer/0",        outFields: ["*"]      });
+           var map = new Map({        basemap: "dark-gray",        layers: [layer]      });
+           var view = new MapView({        container: "viewDiv",        map: map,        center: [-80.135073, 25.774479],        zoom: 16      });
+           function changeCursor(response) {        if (response.results.length > 0) {          document.getElementById("viewDiv").style.cursor = "pointer";
+           } else {          document.getElementById("viewDiv").style.cursor = "default";
+           }      }      function getGraphics(response) {        view.graphics.removeAll();
+               if (response.results.length > 0) {          var graphic = response.results[0].graphic;
+                 graphic.symbol = {            type: "simple-fill",            style: "none",            outline: { // autocasts as new SimpleLineSymbol()
+                                color: "orange",              width: 1            }          }
+                                view.graphics.add(graphic);
+           }      }
+           view.when(function () {        view.whenLayerView(layer).then(function (lview) {          watchUtils.whenFalseOnce(lview, "updating", function () {            // Set up a click event handler and retrieve the screen x, y coordinates
+            view.on("pointer-move", function (evt) {              var screenPoint = {                x: evt.x,                y: evt.y              };
+                   // the hitTest() checks to see if any graphics in the view              // intersect the given screen x, y coordinates
+                   view.hitTest(screenPoint)                .then(function (response) {                  changeCursor(response);
+                         getGraphics(response);
+                     });
+               });
+             });
+           });      });    });
+    </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
+‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍‍

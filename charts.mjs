@@ -181,7 +181,8 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
               let name = feature.category;
               console.log(`Chart item: ${name}`)
 
-              // highlightFeature(match);
+              drawGuides({name});
+              highlightFeature({name});
             }
           },
         ],
@@ -797,7 +798,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       map: map,
       extent: getDatasetExtent(dataset),
       ui: { components: [] },
-      highlightOptions: { color: [255, 241, 58], fillOpacity: 0.4 },
     });
     view.whenLayerView(layer).then(r => state.layerView = r);
 
@@ -832,21 +832,9 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
           var name = match.results[0]?.graphic?.attributes?.NAME;
           if (name) {
             console.log('match:', name);
-            // var query = layer.createQuery();
-            // query.where =
-            //   `NAME = '${name}'`;
-            // console.log('layerView:', layerView)
-            // layer.queryFeatures(query).then(result => {
-            //   let {highlights} = state;
-            //   if (highlights) {
-            //     highlights.forEach(h => h.remove())
-            //   }
-            //   state.highlights.push(layerView.highlight(result.features));
-            //   window.highlights = state.highlights;
-            // });
 
-            drawGuides(match);
-            highlightFeature(match);
+            drawGuides({response: match});
+            highlightFeature({response: match});
           }
 
         } catch(e) {
@@ -863,55 +851,63 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     return view;
   }
 
-  function highlightFeature(response) {
-    console.log('highlightFeature:', response)
-    let {view} = state;
-    var result = response.results[0];
+  async function highlightFeature({response = null, name = null}) {
+    let {view, layer} = state;
     var symbol = {
       type: "simple-fill",
-      color: [255,255,0,0.0],
+      color: [255,0,0,0.5],
       style: "solid",
       outline: {
-        color: [102,0,204],
-        width: 5
+        color: "red",
+        width: 2
       }
     };
-    view.graphics.removeAll();
-    if (result) {
-      var selectionGraphic = result.graphic;
-      selectionGraphic.symbol = symbol;
-      view.graphics.add(selectionGraphic);
+    var selectionGraphic = {
+      type: "polygon" // autocast to new Graphic()
+    };
+    if (name) {
+      var query = layer.createQuery();
+      query.where = `NAME = '${name}'`;
+      query.returnGeometry = true;
+      response = await layer.queryFeatures(query).then(response => response);
+      selectionGraphic.geometry = response.features[0].geometry;
+    } else {
+      var result = response.results[0]
+      selectionGraphic = result.graphic;
     }
+    view.graphics.removeAll(); // reset
+    selectionGraphic.symbol = symbol;
+    view.graphics.add(selectionGraphic);
   }
   window.matches = matches;
 
-  function drawGuides(response) {
+  function drawGuides({response = null, name = null}) {
     // get the topmost graphic from the hover location
     // and display select attribute values from the
     // graphic to the user
-    console.log('response:', response)
-    if (!response.results) {
-      matches.forEach(i => i.color = undefined)
-      matches = [];
-      console.log('clear')
-      return false;
+    if (!name) {
+      console.log('response:', response)
+      if (!response.results) {
+        matches.forEach(i => i.color = undefined)
+        matches = [];
+        console.log('clear')
+        return false;
+      }
+      var graphic = response.results[0].graphic;
+      var attributes = graphic.attributes;
+      name = attributes.NAME;
     }
-    var graphic = response.results[0].graphic;
-    var attributes = graphic.attributes;
-    var name = attributes.NAME;
 
-    if (name) {
-      console.log('name:', name)
-      let matchIndex = chart.dataProvider.findIndex(m => m["NAME"] == name);
-      let match = chart.dataProvider[matchIndex];
+    console.log('name:', name)
+    let matchIndex = chart.dataProvider.findIndex(m => m["NAME"] == name);
+    let match = chart.dataProvider[matchIndex];
 
-      guide.category = chart.dataProvider[matchIndex-1].NAME; // start guide highlight from here
-      guide.toCategory = name; // end guide highlight here
+    guide.category = chart.dataProvider[matchIndex-1].NAME; // start guide highlight from here
+    guide.toCategory = name; // end guide highlight here
 
-      guide.fillAlpha = 1;
-      guide.fillColor = "#ff0000";
-      chart.categoryAxis.draw(); // AH HA - update guides
-    }
+    guide.fillAlpha = 1;
+    guide.fillColor = "#ff0000";
+    chart.categoryAxis.draw(); // AH HA - update guides
 
   }
 
