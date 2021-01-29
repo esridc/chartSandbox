@@ -272,9 +272,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       if (matches && matches.length) {
         var match = matches.pop();
 
-        var name = match.graphic.attributes[displayField];
         if (match.graphic?.geometry) {
-          console.log('match:', name);
           highlightFeature({response: match});
           if (state.chart) drawGuides({response: match});
 
@@ -394,6 +392,12 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     document.getElementById('chart').style.display = "none";
     document.getElementById('chart').innerHTML = '';
 
+    // choose a field to use as the chart's "category" x-axis - this is the attribute used to identify a given feature to a human. typically this would be "name" etc but many datasets don't include that.
+
+    let displayField = dataset.attributes.displayField; // check for a displayField - for more info: https://community.esri.com/t5/arcgis-pro-questions/what-is-the-display-field/m-p/742003
+    if (displayField == "") displayField = dataset.attributes.fieldNames.find(i => i.toLowerCase().includes("name"))
+    if (typeof displayField == "undefined") displayField = "NAME"; // ¯\_(ツ)_/¯
+
     // initialize a new layer
     const url = dataset.attributes.url;
     layer = new FeatureLayer({
@@ -407,11 +411,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       }
     });
 
-    // choose a field to use as the chart's "category" x-axis - this is the attribute used to identify a given feature to a human. typically this would be "name" etc but many datasets don't include that.
-
-    let displayField = dataset.attributes.displayField; // check for a displayField - for more info: https://community.esri.com/t5/arcgis-pro-questions/what-is-the-display-field/m-p/742003
-    if (displayField == "") displayField = dataset.attributes.fieldNames.find(i => i.toLowerCase().includes("name"))
-    if (typeof displayField == "undefined") displayField = "NAME"; // ¯\_(ツ)_/¯
 
     // update state
     state = {...state, layer, dataset, displayField};
