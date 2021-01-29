@@ -260,23 +260,29 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
         include: state.layer,
       }
       view.hitTest(screenPoint, options)
-        .then( function(response){
+        .then( function(response) {
           if (response.results.length) {
-              matches.push(response.results[0]);
+            matches.push(response.results[0]);
+          } else {
+            view.graphics.removeAll(); // reset
+            view.popup.close();
           }
         });
 
       if (matches && matches.length) {
         var match = matches.pop();
-          var name = match.graphic.attributes[displayField];
-          if (match.graphic?.geometry) {
-            // var name = match.graphic.attributes[displayField];
-            // if (name) {
-              console.log('match:', name);
-              highlightFeature({response: match});
-              drawGuides({response: match});
-            // }
-          }
+
+        var name = match.graphic.attributes[displayField];
+        if (match.graphic?.geometry) {
+          console.log('match:', name);
+          highlightFeature({response: match});
+          if (state.chart) drawGuides({response: match});
+
+          view.popup.open({
+            location: match.graphic.geometry.centroid,
+            features: [match.graphic]
+          });
+        }
         matches = [];
       }
     });
