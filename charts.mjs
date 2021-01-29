@@ -43,10 +43,10 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
   // data urls
   var datasets = {
-    'NYC bags': "7264acdf886941199f7c01648ba04e6b_0",
     'Tucson Demographics': "35fda63efad14a7b8c2a0a68d77020b7_0",
-    'Citclops Water': "8581a7460e144ae09ad25d47f8e82af8_0",
+    'NYC bags': "7264acdf886941199f7c01648ba04e6b_0",
     'Seattle Bike Facilities': "f4f509fa13504fb7957cef168fad74f0_1",
+    'Citclops Water': "8581a7460e144ae09ad25d47f8e82af8_0",
     'Black Rat Range': "28b0a8a0727d4cc5a2b9703cf6ca4425_0",
     'Traffic Circles': "717b10434d4945658355eba78b66971a_6",
     'King County Photos': "383878300c4c4f8c940272ba5bfcce34_1036",
@@ -81,6 +81,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       fieldName: null,
       highlights: [],
       displayField: null,
+      chart: null,
     }
   }
   var chart, cedarChart, guide;
@@ -149,10 +150,10 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
               // e.chart.graphs[0].colorField = "color"; // either works
               e.chart.graphs[0].fillColorsField = "color"; // either works
               e.chart.graphs[0].lineColorField = "color";
-              chart = e.chart;
+              state.chart = e.chart;
               window.chart = e.chart;
               guide = new AmCharts.Guide();
-              chart.categoryAxis.addGuide(guide);
+              e.chart.categoryAxis.addGuide(guide);
             },
           },
           {
