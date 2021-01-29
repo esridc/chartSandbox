@@ -120,6 +120,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     if (fieldName == null) fieldName = event.currentTarget.dataset.field;
     const field = await getDatasetField(fieldName);
 
+    document.getElementById('chart').style.display = "inline";
     view.ui.add('chart', 'bottom-left');
     var definition = {
       type: "bar",
@@ -566,6 +567,11 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
         dataset = (await fetch(datasetURL).then(r => r.json())).data[0];
       } catch(e) { console.log('failed to load dataset from slug', args.datasetSlug, e); }
     }
+
+    // clear any existing charts
+    document.getElementById('chart').style.display = "none";
+    document.getElementById('chart').innerHTML = '';
+
     // initialize a new layer
     const url = dataset.attributes.url;
     layer = new FeatureLayer({

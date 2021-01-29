@@ -314,6 +314,7 @@ body,
 
 #chart {
   height: 200px; width: 400px;
+  display: none;
 }
 
 .amcharts-chart-div > a {
