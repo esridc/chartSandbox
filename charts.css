@@ -320,3 +320,25 @@ body,
 .amcharts-chart-div > a {
   visibility: hidden;
 }
+
+.esri-popup__header {
+  display: none !important;
+}
+
+.esri-popup__footer {
+  display: none !important;
+}
+
+.esri-popup__main-container {
+  padding-top: 5px;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* .esri-view-width-xlarge .esri-popup__main-container,.esri-view-width-large .esri-popup__main-container,.esri-view-width-medium .esri-popup__main-container{
+  width: auto !important;
+} */
+
+.esri-popup__feature-menu {
+  display: none !important;
+}

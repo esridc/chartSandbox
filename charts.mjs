@@ -278,10 +278,22 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
           highlightFeature({response: match});
           if (state.chart) drawGuides({response: match});
 
-          view.popup.open({
-            location: match.graphic.geometry.centroid,
-            features: [match.graphic]
-          });
+          // position popup behind direction of pointer's travel so it doesn't block the hittests
+          let alignment = state.direction == "North" ? "bottom-center" :
+                          state.direction == "East" ? "bottom-left" :
+                          state.direction == "South" ? "top-center" :
+                          "top-right";
+          if (!view.popup.visible ||
+              (view.popup.visible &&
+              match.graphic.geometry.centroid.x != view.popup.location.x &&
+              match.graphic.geometry.centroid.y != view.popup.location.y)) {
+            // new popup
+            view.popup.alignment = alignment;
+            view.popup.open({
+              location: match.graphic.geometry.centroid,
+              features: [match.graphic],
+            });
+          } // otherwise leave the existing popup alone
         }
         matches = [];
       }
@@ -389,6 +401,10 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       url,
       minScale: 0,
       maxScale: 0,
+      popupTemplate: {
+        content: `${displayField}: {${displayField}}`,
+        overwriteActions: true,
+      }
     });
 
     // choose a field to use as the chart's "category" x-axis - this is the attribute used to identify a given feature to a human. typically this would be "name" etc but many datasets don't include that.
@@ -1197,6 +1213,28 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       });
   }
 
+  // track mouse movement for popup orientation
+  var direction = "";
+  var oldx = 0;
+  var oldy = 0;
+  function mousemovemethod (e) {
+    if (e.pageX > oldx && e.pageY == oldy) {
+        direction="East";
+    }
+    else if (e.pageX == oldx && e.pageY > oldy) {
+        direction="South";
+    }
+    else if (e.pageX == oldx && e.pageY < oldy) {
+        direction="North";
+    }
+    else if (e.pageX < oldx && e.pageY == oldy) {
+        direction="West";
+    }
+    state.direction = direction;
+    oldx = e.pageX;
+    oldy = e.pageY;
+  }
+  document.addEventListener('mousemove', mousemovemethod);
 
   // TESTS
   // autoStyle({});
