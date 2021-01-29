@@ -465,13 +465,12 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
       if (matches && matches.length) {
         var match = matches.pop();
-          console.log(match.graphic.attributes.layerName)
+          var name = match.graphic.attributes[displayField];
           if (match.graphic?.geometry) {
             // var name = match.graphic.attributes[displayField];
             // if (name) {
               console.log('match:', name);
               highlightFeature({response: match});
-
               drawGuides({response: match});
             // }
           }
@@ -517,22 +516,25 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   window.matches = matches;
 
   function drawGuides({response = null, name = null}) {
+    let {displayField, chart} = state;
     // get the topmost graphic from the hover location
     // and display select attribute values from the
     // graphic to the user
     if (!name) {
-      if (!response.results) {
-        matches.forEach(i => i.color = undefined)
-        matches = [];
-        return false;
-      }
-      var graphic = response.results[0].graphic;
+      var graphic = response.results ? response.results[0].graphic : response.graphic;
       var attributes = graphic.attributes;
-      name = attributes.NAME;
+      name = attributes[displayField];
+      if (!name) {
+        var findByField = Object.keys(attributes)[0]; // whatever
+        let matchValue = attributes[findByField];
+        let matchIndex = chart.dataProvider.findIndex(m => m[findByField] == matchValue);
+        let match = chart.dataProvider[matchIndex];
+        name = match[displayField]
+      } else {
+        findByField = displayField;
+      }
     }
 
-    let matchIndex = chart.dataProvider.findIndex(m => m["NAME"] == name);
-    let match = chart.dataProvider[matchIndex];
 
     guide.category = name; // start guide highlight here
     guide.toCategory = name; // end guide highlight here
