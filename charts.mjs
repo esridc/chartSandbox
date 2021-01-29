@@ -294,6 +294,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     return view;
   }
 
+  // color a feature red
   async function highlightFeature({response = null, name = null}) {
     let {view, layer, displayField, geotype} = state;
     var symbol = {
@@ -315,36 +316,33 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       response = await layer.queryFeatures(query).then(response => response);
       selectionGraphic.geometry = response.features[0].geometry || response.geometry;
     } else {
-      // var result = response.results[0]
       selectionGraphic = response.graphic;
     }
     view.graphics.removeAll(); // reset
     selectionGraphic.symbol = symbol;
     view.graphics.add(selectionGraphic);
   }
-  window.matches = matches;
 
+  // draw a red line on a specific category on the chart's "category" x-axis
   function drawGuides({response = null, name = null}) {
     let {displayField, chart} = state;
-    // get the topmost graphic from the hover location
-    // and display select attribute values from the
-    // graphic to the user
-    if (!name) {
+
+    // match a graphic to a chart category
+    if (!name) { // get a name from the response object
       var graphic = response.results ? response.results[0].graphic : response.graphic;
       var attributes = graphic.attributes;
       name = attributes[displayField];
-      if (!name) {
-        var findByField = Object.keys(attributes)[0]; // whatever
-        let matchValue = attributes[findByField];
-        let matchIndex = chart.dataProvider.findIndex(m => m[findByField] == matchValue);
+      if (!name) { // use any attribute to get a category name
+        var findByField = Object.keys(attributes)[0]; // grab the first one
+        let matchValue = attributes[findByField]; // get the value
+        let matchIndex = chart.dataProvider.findIndex(m => m[findByField] == matchValue); // match by value
         let match = chart.dataProvider[matchIndex];
-        name = match[displayField]
-      } else {
-        findByField = displayField;
+        name = match[displayField]; // extract matching category name
       }
     }
 
-
+    // draw chart guides
+    // https://docs.amcharts.com/3/javascriptcharts/Guide
     guide.category = name; // start guide highlight here
     guide.toCategory = name; // end guide highlight here
     guide.expand = true;
@@ -393,9 +391,11 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       maxScale: 0,
     });
 
-    let displayField = dataset.attributes.displayField;
+    // choose a field to use as the chart's "category" x-axis - this is the attribute used to identify a given feature to a human. typically this would be "name" etc but many datasets don't include that.
+
+    let displayField = dataset.attributes.displayField; // check for a displayField - for more info: https://community.esri.com/t5/arcgis-pro-questions/what-is-the-display-field/m-p/742003
     if (displayField == "") displayField = dataset.attributes.fieldNames.find(i => i.toLowerCase().includes("name"))
-    if (typeof displayField == "undefined") displayField = "NAME";
+    if (typeof displayField == "undefined") displayField = "NAME"; // ¯\_(ツ)_/¯
 
     // update state
     state = {...state, layer, dataset, displayField};
@@ -412,7 +412,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     let chartPlaceholderText = `Search ${dataset.attributes.fields.length} Attributes by Name`;
     chartAttributeSearchElement.setAttribute('placeholder', chartPlaceholderText);
 
-    state.usePredefinedStyle = false; // disable for now
     // draw map once before autoStyling because getBgColor() requires an initialized layerView object
     state.view = await drawMap();
     autoStyle({});  // guess at a style for this field
@@ -467,7 +466,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
   // Choose symbology based on various dataset and theme attributes
   async function autoStyle ({event = null, fieldName = null}) {
-    var {dataset, layer, view, usePredefinedStyle, displayField} = state;
+    var {dataset, layer, view, displayField} = state;
 
     // SET COLORS
 
