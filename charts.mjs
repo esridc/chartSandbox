@@ -43,10 +43,10 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
   // data urls
   var datasets = {
+    'NYC bags': "7264acdf886941199f7c01648ba04e6b_0",
     'Tucson Demographics': "35fda63efad14a7b8c2a0a68d77020b7_0",
     'Citclops Water': "8581a7460e144ae09ad25d47f8e82af8_0",
     'Seattle Bike Facilities': "f4f509fa13504fb7957cef168fad74f0_1",
-    'NYC bags': "7264acdf886941199f7c01648ba04e6b_0",
     'Black Rat Range': "28b0a8a0727d4cc5a2b9703cf6ca4425_0",
     'Traffic Circles': "717b10434d4945658355eba78b66971a_6",
     'King County Photos': "383878300c4c4f8c940272ba5bfcce34_1036",
@@ -80,11 +80,18 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       categoricalMax: 7,
       fieldName: null,
       highlights: [],
+      displayField: null,
     }
   }
   var chart, cedarChart, guide;
   var matches = [];
 
+  // set up symbol types
+  var geoSymbols = {
+    'point': 'simple-marker',
+    'line': 'simple-line',
+    'polygon': 'simple-fill'
+  }
   const DATASET_FIELD_UNIQUE_VALUES = {}; // cache by field name
 
   // URL params
@@ -107,13 +114,12 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   // add a chart, making a best guess at appropriate style based on fieldType and various properties
   async function addChart({event = null, fieldName = null, fieldStats = null}) {
     console.log('addChart:', arguments);
-    let {view, layer, dataset} = state;
+    let {view, layer, dataset, displayField} = state;
 
     // if no fieldName is passed directly, get it from the attribute selection event
     if (fieldName == null) fieldName = event.currentTarget.dataset.field;
     const field = await getDatasetField(fieldName);
 
-    // debugger
     view.ui.add('chart', 'bottom-left');
     var definition = {
       type: "bar",
@@ -129,9 +135,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       ],
       series: [
         {
-          // category: { field: "STATE_NAME", label: "US State" },
-          // value: { field: "POPULATION", label: "Population" }
-          category: { field: "NAME", label: "NAME" },
+          category: { field: displayField, label: displayField },
           value: { field: fieldName, label: fieldName },
         }
       ],
@@ -176,13 +180,16 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
             "method": async e => {
               var xValue = e.chart.categoryAxis.coordinateToValue(e.x);
               var yValue = AmCharts.roundTo(e.chart.valueAxes[0].coordinateToValue(e.y), 2);
-              let feature = e.chart.chartData.filter(i => i.dataContext.NAME == xValue)[0];
-              let title = e.chart.valueAxes[0].title
-              let name = feature.category;
+              var feature = e.chart.chartData.filter(i => i.dataContext[displayField] == xValue)[0];
+              if (!feature) {
+                feature = e.chart.chartData.filter(i => i.dataContext[displayField] == xValue)[0];
+              }
+              let name = feature.category || feature.name;
+              // let name = feature.category;
               console.log(`Chart item: ${name}`)
 
-              drawGuides({name});
               highlightFeature({name});
+              drawGuides({name});
             }
           },
         ],
@@ -401,7 +408,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
   // draw whole map from scratch
   async function drawMap() {
-    var {dataset, layer, view} = state;
+    var {dataset, layer, view, displayField} = state;
     const darkModeCheckbox = document.querySelector('#darkMode calcite-checkbox');
     const map = new Map({
       // choose a light or dark background theme as default
@@ -436,7 +443,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     document.querySelector('#recordCount').innerHTML = `${dataset.attributes.recordCount} records`;
 
     view.on("pointer-move", async function(evt) {
-      let {layerView, highlights} = state;
+      let {layer, layerView, highlights} = state;
       var screenPoint = {
         x: evt.x,
         y: evt.y
@@ -444,28 +451,28 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
       // the hitTest() checks to see if any graphics in the view
       // intersect the given screen x, y coordinates
-      view.hitTest(screenPoint)
+      const options = {
+        include: state.layer,
+      }
+      view.hitTest(screenPoint, options)
         .then( function(response){
-            matches.push(response);
-            // highlightFeature(response);
-            // debugger
-            // console.log('matches:', matches)
+          if (response.results.length) {
+              matches.push(response.results[0]);
+          }
         });
 
       if (matches && matches.length) {
         var match = matches.pop();
-        try {
-          var name = match.results[0]?.graphic?.attributes?.NAME;
-          if (name) {
-            console.log('match:', name);
+          console.log(match.graphic.attributes.layerName)
+          if (match.graphic?.geometry) {
+            // var name = match.graphic.attributes[displayField];
+            // if (name) {
+              console.log('match:', name);
+              highlightFeature({response: match});
 
-            drawGuides({response: match});
-            highlightFeature({response: match});
+              drawGuides({response: match});
+            // }
           }
-
-        } catch(e) {
-          //
-        }
         matches = [];
       }
     });
@@ -478,28 +485,28 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   }
 
   async function highlightFeature({response = null, name = null}) {
-    let {view, layer} = state;
+    let {view, layer, displayField, geotype} = state;
     var symbol = {
-      type: "simple-fill",
+      type: geoSymbols[geotype],
       color: [255,0,0,0.5],
-      style: "solid",
+      style: geotype == 'point' ? "circle" : 'solid',
       outline: {
         color: "red",
         width: 2
       }
     };
     var selectionGraphic = {
-      type: "polygon" // autocast to new Graphic()
+      type: geotype // autocast to new Graphic()
     };
     if (name) {
       var query = layer.createQuery();
-      query.where = `NAME = '${name}'`;
+      query.where = `${displayField} = '${name}'`;
       query.returnGeometry = true;
       response = await layer.queryFeatures(query).then(response => response);
-      selectionGraphic.geometry = response.features[0].geometry;
+      selectionGraphic.geometry = response.features[0].geometry || response.geometry;
     } else {
-      var result = response.results[0]
-      selectionGraphic = result.graphic;
+      // var result = response.results[0]
+      selectionGraphic = response.graphic;
     }
     view.graphics.removeAll(); // reset
     selectionGraphic.symbol = symbol;
@@ -512,11 +519,9 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     // and display select attribute values from the
     // graphic to the user
     if (!name) {
-      console.log('response:', response)
       if (!response.results) {
         matches.forEach(i => i.color = undefined)
         matches = [];
-        console.log('clear')
         return false;
       }
       var graphic = response.results[0].graphic;
@@ -524,7 +529,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       name = attributes.NAME;
     }
 
-    console.log('name:', name)
     let matchIndex = chart.dataProvider.findIndex(m => m["NAME"] == name);
     let match = chart.dataProvider[matchIndex];
 
@@ -570,8 +574,13 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
       minScale: 0,
       maxScale: 0,
     });
+
+    let displayField = dataset.attributes.displayField;
+    if (displayField == "") displayField = dataset.attributes.fieldNames.find(i => i.toLowerCase().includes("name"))
+    if (typeof displayField == "undefined") displayField = "NAME";
+
     // update state
-    state = {...state, layer, dataset};
+    state = {...state, layer, dataset, displayField};
 
     // clear widgets list
     state.widgets = [];
@@ -640,7 +649,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
 
   // Choose symbology based on various dataset and theme attributes
   async function autoStyle ({event = null, fieldName = null}) {
-    var {dataset, layer, view, usePredefinedStyle} = state;
+    var {dataset, layer, view, usePredefinedStyle, displayField} = state;
 
     // SET COLORS
 
@@ -673,6 +682,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
                 : (geometryType == 'esriGeometryLine') ? 'line'
                 : (geometryType == 'esriGeometryPolyline') ? 'line'
                 : geometryType;
+    state.geotype = geotype;
 
     // SET GEOMETRY
 
@@ -1389,7 +1399,7 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
   // TESTS
   // autoStyle({});
   // autoStyle({fieldName:"AMERIND_CY"});
-  addChart({fieldName:"AMERIND_CY"});
+  // addChart({fieldName:"AMERIND_CY"});
   // autoStyle({fieldName:"parametersProjectObservationUID"});
   // addChart({fieldName:"observationResult"});
   // addChart({fieldName:"PROJECT_NUMBER"});
