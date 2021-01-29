@@ -528,8 +528,9 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
     let matchIndex = chart.dataProvider.findIndex(m => m["NAME"] == name);
     let match = chart.dataProvider[matchIndex];
 
-    guide.category = chart.dataProvider[matchIndex-1].NAME; // start guide highlight from here
+    guide.category = name; // start guide highlight here
     guide.toCategory = name; // end guide highlight here
+    guide.expand = true;
 
     guide.fillAlpha = 1;
     guide.fillColor = "#ff0000";
