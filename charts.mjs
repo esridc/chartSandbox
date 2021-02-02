@@ -142,14 +142,13 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
         }
       ],
       overrides: {
-        "listeners": [
+        "listeners": [ // listeners must be added here to be passed to AmCharts
           {
             "event": "init",
             "method": e => {
               console.log('init', e)
-              // e.chart.graphs[0].colorField = "color"; // either works
-              e.chart.graphs[0].fillColorsField = "color"; // either works
-              e.chart.graphs[0].lineColorField = "color";
+              e.chart.graphs[0].fillColorsField = "color";
+              e.chart.graphs[0].lineColorField = "color"; // either works
               state.chart = e.chart;
               window.chart = e.chart;
               guide = new AmCharts.Guide();
@@ -169,12 +168,9 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
             "method": e => {
               console.log('clickGraphItem', e)
 
-              // e.item.color = "red";
               e.item.lineColor = "red";
               e.item.fillColors = "red";
-              // debugger
-              e.chart.drawChart(); // why does drawChart work here but not without an event?
-              // e.chart.parseData(); // why does drawChart work here but not without an event?
+              e.chart.drawChart(); // drawChart works here but not outside an event
             }
           },
           {
@@ -187,7 +183,6 @@ import { loadModules, setDefaultOptions } from 'https://unpkg.com/esri-loader/di
                 feature = e.chart.chartData.filter(i => i.dataContext[displayField] == xValue)[0];
               }
               let name = feature.category || feature.name;
-              // let name = feature.category;
               console.log(`Chart item: ${name}`)
 
               highlightFeature({name});
